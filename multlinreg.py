@@ -50,7 +50,7 @@ R_squared = round(r_value**2, 4)
 plt.text(70, 60, f'n = {n}\nr ={r:.2f}\nR² = {R_squared:.3f}\np = {p:.5f}', fontsize=12, verticalalignment='baseline',
 bbox=dict(boxstyle='square', facecolor='white', edgecolor='black', alpha=1))
 
-
+"""KI VERWENDUNG"""
 y_test_mean = y_test_series.mean()
 
 SST = np.sum((y_test_series - y_test_mean) ** 2)
@@ -62,7 +62,7 @@ SSE = np.sum((y_test_series - y_pred_series) ** 2)
 print(f"SST (Total Sum of Squares): {SST:.2f}")
 print(f"SSR (Regression Sum of Squares): {SSR:.2f}")
 print(f"SSE (Error Sum of Squares): {SSE:.2f}")
-
+"""KI VERWENDUNG"""
 
 sns.regplot(x=y_pred_series, y=y_test_series, line_kws={"color": "black", "linestyle": "--"}, truncate=False)
 plt.xlim(0,100)
