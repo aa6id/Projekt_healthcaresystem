@@ -1,0 +1,20 @@
+# Predicted vs Actual Plot with Regression Line
+import scipy.stats as stats
+
+for name, model in best_models.items():
+    y_pred = model.predict(X_test_scaled)
+    plt.figure(figsize=(6, 6))
+    sns.regplot(x=y_test, y=y_pred, line_kws={"color": "black", "linestyle": "--"})
+    plt.xlabel("Actual Values")
+    plt.ylabel("Predicted Values")
+    plt.title(f"{name}: Predicted vs Actual with Regression Line")
+    
+    # Display stats
+    r, p = stats.pearsonr(y_test, y_pred)
+    r_squared = r**2
+    plt.text(min(y_test), max(y_pred), f"R = {r:.2f}\nR² = {r_squared:.3f}\np = {p:.4f}",
+             bbox=dict(facecolor='white', edgecolor='black'))
+
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')  # 45-degree reference
+    plt.tight_layout()
+    plt.show()
