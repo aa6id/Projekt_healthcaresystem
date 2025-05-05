@@ -1,0 +1,128 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split, RepeatedKFold, GridSearchCV, cross_val_score
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+import shap
+import warnings
+warnings.filterwarnings("ignore")
+
+# 1. Load Data and Preprocess
+df = pd.read_excel('O:/Dokumente/Spyder-AufG/multlinreg.xlsx')
+df = df.dropna()
+
+# Dummy coding categorical variables if present (example: 'gender')
+if 'gender' in df.columns:
+    df = pd.get_dummies(df, columns=['gender'], drop_first=True)
+
+# 2. Define features and target
+target = 'hearing_loss'
+features = [col for col in df.columns if col != target]
+X = df[features]
+y = df[target]
+
+# 3. Multicollinearity Check: Heatmap and VIF
+sns.heatmap(X.corr(), annot=True, cmap='coolwarm')
+plt.title("Feature Correlation Heatmap")
+plt.show()
+
+vif_data = pd.DataFrame()
+vif_data["feature"] = X.columns
+vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+print(vif_data)
+
+# 4. Train-test split and scaling
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = MinMaxScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Define models
+models = {
+    'LinearRegression': LinearRegression(),
+    'Ridge': Ridge(),
+    'Lasso': Lasso()
+}
+
+cv = RepeatedKFold(n_splits=10, n_repeats=20, random_state=1)
+
+# 5. Hyperparameter optimization using GridSearch
+param_grid = {
+    'Ridge': {"alpha": [0.01, 0.1, 1, 10, 100]},
+    'Lasso': {"alpha": [0.01, 0.1, 1, 10, 100]}
+}
+
+best_models = {}
+for name, model in models.items():
+    if name in param_grid:
+        grid = GridSearchCV(model, param_grid[name], scoring='neg_mean_squared_error', cv=cv)
+        grid.fit(X_train_scaled, y_train)
+        best_models[name] = grid.best_estimator_
+    else:
+        model.fit(X_train_scaled, y_train)
+        best_models[name] = model
+
+# 6. Evaluation
+results = []
+for name, model in best_models.items():
+    y_pred = model.predict(X_test_scaled)
+    mae = mean_absolute_error(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
+    r2 = r2_score(y_test, y_pred)
+    results.append([name, mae, mse, rmse, r2])
+
+    # Residual plot
+    sns.residplot(x=y_pred, y=y_test - y_pred, lowess=True)
+    plt.xlabel("Predicted")
+    plt.ylabel("Residuals")
+    plt.title(f"Residual Plot - {name}")
+    plt.show()
+
+    # SHAP values
+    explainer = shap.Explainer(model, X_train_scaled)
+    shap_values = explainer(X_test_scaled)
+    shap.summary_plot(shap_values, X_test, show=False)
+    plt.title(f"SHAP Summary Plot - {name}")
+    plt.show()
+
+# Results comparison
+results_df = pd.DataFrame(results, columns=["Model", "MAE", "MSE", "RMSE", "R2"])
+print(results_df)
+
+# Boxplot of R2 scores over multiple seeds (simulated)
+r2_scores_all = []
+seeds = range(10)
+for seed in seeds:
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=seed)
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    for name, model in best_models.items():
+        model.fit(X_train_scaled, y_train)
+        y_pred = model.predict(X_test_scaled)
+        r2 = r2_score(y_test, y_pred)
+        r2_scores_all.append([name, seed, r2])
+
+r2_df = pd.DataFrame(r2_scores_all, columns=["Model", "Seed", "R2"])
+sns.violinplot(x="Model", y="R2", data=r2_df)
+plt.title("Distribution of R2 Scores across Seeds")
+plt.show()
+
+# Clustermap of model metrics
+metrics_matrix = results_df.set_index("Model").drop(columns="R2")
+sns.clustermap(metrics_matrix, cmap="vlag", standard_scale=1)
+plt.title("Clustermap of Model Metrics")
+plt.show()
+
+# Rankplot of metrics
+rank_df = results_df.set_index("Model").rank(axis=0, ascending=True)
+sns.heatmap(rank_df, annot=True, cmap="YlGnBu")
+plt.title("Rank Plot of Models across Metrics")
+plt.show()
