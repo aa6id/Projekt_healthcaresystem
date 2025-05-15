@@ -32,7 +32,7 @@ ax[0].legend(title='LEGENDE')
 box = sns.boxplot(data=boxplot_data, x="Difference in Monosyllabic Score", y="Difference", palette=("cadetblue","steelblue"), ax=ax[1])
 
 
-ax[1].set_title('Combined Boxplot of the differences between estimated and Reference monosyllabic scores')
+ax[1].set_title('Combined Boxplot of the differences between estimated and reference monosyllabic scores')
 ax[1].set_ylabel(r'$\mathrm{MS_{pred} - MS_{ref}}$ [%]', fontsize=15)
 plt.xticks(ticks=[0, 1], labels=['Estimated', 'Reference',])
 
