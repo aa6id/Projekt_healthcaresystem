@@ -1,42 +1,39 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Load data
+
 df = pd.read_excel('O:/Docs/D13_Daten.xlsx')
 
-# Define variables
+
 y_werte = ['diff_estimated_real', 'diff_predicted_real']  
 x = df['monosyllabic_score']
 
-# Reshape the data for the combined boxplot
-boxplot_data = pd.melt(df, id_vars=["monosyllabic_score"], value_vars=y_werte, 
-                       var_name="Measurement", value_name="Difference")
 
-# Set up subplots: one row for scatter plots, one row for boxplots
+boxplot_data = pd.melt(df, id_vars=["monosyllabic_score"], value_vars=y_werte, 
+                       var_name="Difference in Monosyllabic Score", value_name="Difference")
+#test 
+#print(boxplot_data)
+
 fig, ax = plt.subplots(2, 1, figsize=(10, 10))
 
-# Scatter plot combined into one
-sns.scatterplot(x=x, y=df[y_werte[0]], ax=ax[0], color='darkblue', label=y_werte[0], marker='o')
-sns.scatterplot(x=x, y=df[y_werte[1]], ax=ax[0], color='steelblue', label=y_werte[1], marker='o')
+sns.scatterplot(x=x, y=df[y_werte[0]], ax=ax[0], color='blue', label="Estimated", marker='o', s=100)
+sns.scatterplot(x=x, y=df[y_werte[1]], ax=ax[0], color='steelblue', label="Predicted", marker='o', s=100)
 
-# Title and labels for the scatter plot
-ax[0].set_title('Scatterplot of diff_estimated_real and diff_predicted_real')
+ax[0].set_title('Scatterplot of differences between estimated and predicted monosyllabic scores')
 ax[0].set_xlabel('Monosyllabic Score (%)', fontsize=15)
 ax[0].set_ylabel(r'$\mathrm{MS_{pred} - MS_{ref}}$ [°]', fontsize=15)
+ax[0].set_xlim(0,100)
 ax[0].legend(title='LEGENDE')
 
-# Boxplot
-sns.boxplot(data=boxplot_data, x="monosyllabic_score", y="Difference", hue="Measurement", ax=ax[1])
+box = sns.boxplot(data=boxplot_data, x="Difference in Monosyllabic Score", y="Difference", palette=("blue","steelblue"), ax=ax[1])
 
-# Title and labels for the boxplot
-ax[1].set_title('Combined Boxplot of diff_estimated_real and diff_predicted_real')
-ax[1].set_xlabel('Monosyllabic Score (%)', fontsize=15)
+
+ax[1].set_title('Combined Boxplot of the differences between estimated and predicted monosyllabic scores')
 ax[1].set_ylabel(r'$\mathrm{MS_{pred} - MS_{ref}}$ [°]', fontsize=15)
+plt.xticks(ticks=[0, 1], labels=['Estimated', 'Predicted',])
 
-# Adjust layout for better spacing between plots
+
 plt.tight_layout()
-
-# Show the plots
+plt.savefig("O:/Docs/grafik_final.jpg", dpi=300, bbox_inches="tight")
 plt.show()
